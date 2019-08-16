@@ -63,14 +63,17 @@ func (c *ExCache) Get(key Key) (value interface{}, ok bool) {
 		return
 	}
 	ele, ok := c.cache[key]
-	deadline := ele.Value.(*entry).expire
-	if ok && deadline >= int64(time.Now().UnixNano())  {
-		c.ll.MoveToFront(ele)
-		return ele.Value.(*entry).value, true
-	} else if ok && deadline < int64(time.Now().UnixNano()) {
-		c.ll.Remove(ele)
-		return nil, false
+	if ok {
+		deadline := ele.Value.(*entry).expire
+		if deadline >= int64(time.Now().UnixNano())  {
+			c.ll.MoveToFront(ele)
+			return ele.Value.(*entry).value, true
+		} else if deadline < int64(time.Now().UnixNano()) {
+			c.ll.Remove(ele)
+			return nil, false
+		}
 	}
+
 	return
 }
 
