@@ -18,7 +18,6 @@ type ExCache struct {
 
 	cache map[interface{}]*list.Element
 
-	Expire time.Duration
 }
 
 type entry struct {
@@ -28,12 +27,11 @@ type entry struct {
 }
 
 
-func NewExLru(maxEntries int, expire time.Duration) *ExCache {
+func NewExLru(maxEntries int) *ExCache {
 	return &ExCache{
 		MaxEntries:maxEntries,
 		ll: list.New(),
 		cache: make(map[interface{}]*list.Element),
-		Expire:expire,
 	}
 }
 
@@ -47,10 +45,29 @@ func (c *ExCache) Add(key Key, value interface{}) {
 	if ee, ok := c.cache[key]; ok && ee.Value.(*entry).expire > int64(time.Now().UnixNano()) {
 		c.ll.MoveToFront(ee)
 		ee.Value.(*entry).value = value
-		ee.Value.(*entry).expire = int64(time.Now().UnixNano()) + c.Expire.Nanoseconds()
 	}
 
-	ele := c.ll.PushFront(&entry{key, value, int64(time.Now().UnixNano()) + c.Expire.Nanoseconds()})
+	ele := c.ll.PushFront(&entry{key, value, 0})
+	c.cache[key] = ele
+	if c.MaxEntries != 0 && c.ll.Len() > c.MaxEntries {
+		c.RemoveOldest()
+	}
+}
+
+// Add adds a value to the cache and set expire time.
+func (c *ExCache) AddWithExpire(key Key, value interface{}, expire time.Duration) {
+	if c.cache == nil {
+		c.cache = make(map[interface{}]*list.Element)
+		c.ll = list.New()
+	}
+
+	if ee, ok := c.cache[key]; ok && ee.Value.(*entry).expire > int64(time.Now().UnixNano()) {
+		c.ll.MoveToFront(ee)
+		ee.Value.(*entry).value = value
+		ee.Value.(*entry).expire = int64(time.Now().UnixNano()) + expire.Nanoseconds()
+	}
+
+	ele := c.ll.PushFront(&entry{key, value, int64(time.Now().UnixNano()) + expire.Nanoseconds()})
 	c.cache[key] = ele
 	if c.MaxEntries != 0 && c.ll.Len() > c.MaxEntries {
 		c.RemoveOldest()
@@ -65,6 +82,10 @@ func (c *ExCache) Get(key Key) (value interface{}, ok bool) {
 	ele, ok := c.cache[key]
 	if ok {
 		deadline := ele.Value.(*entry).expire
+		if deadline == 0 {
+			c.ll.MoveToFront(ele)
+			return ele.Value.(*entry).value, true
+		}
 		if deadline >= int64(time.Now().UnixNano())  {
 			c.ll.MoveToFront(ele)
 			return ele.Value.(*entry).value, true

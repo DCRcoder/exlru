@@ -6,8 +6,9 @@ import (
 )
 
 func TestBaseExpireGet(t *testing.T) {
-	lru := NewExLru(10, 10 * time.Second)
-	lru.Add("aa", "ab")
+	lru := NewExLru(10)
+	lru.Add("bb", "zouzuz")
+	lru.AddWithExpire("aa", "ab", 10 * time.Second)
 	_, ok := lru.Get("aa")
 	if !ok {
 		t.Errorf("get key not existed")
@@ -22,13 +23,17 @@ func TestBaseExpireGet(t *testing.T) {
 	if ok {
 		t.Errorf("key not expired")
 	}
+
+	_, ok = lru.Get("bb")
+	if !ok {
+		t.Errorf("expired error")
+	}
 }
 
-
 func TestLengthLimit(t *testing.T) {
-	lru := NewExLru(2, 10 * time.Second)
-	lru.Add("key1", 1)
-	lru.Add("key2", "b")
+	lru := NewExLru(2)
+	lru.AddWithExpire("key1", 1, 10 * time.Second)
+	lru.AddWithExpire("key2", "b", 10 * time.Second)
 	v, ok := lru.Get("key1")
 	if !ok || v != 1 {
 		t.Errorf("get key error")
@@ -38,7 +43,7 @@ func TestLengthLimit(t *testing.T) {
 		t.Errorf("get key error")
 	}
 	l := []string{"1", "3"}
-	lru.Add("key3", l)
+	lru.AddWithExpire("key3", l,  10 * time.Second)
 	_, ok = lru.Get("key1")
 	if ok {
 		t.Errorf("lru not work")
@@ -51,4 +56,3 @@ func TestLengthLimit(t *testing.T) {
 		t.Errorf("lru not work")
 	}
 }
-
