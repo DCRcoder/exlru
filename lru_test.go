@@ -1,6 +1,8 @@
 package exlru
 
 import (
+	"context"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -54,5 +56,49 @@ func TestLengthLimit(t *testing.T) {
 	}
 	if v.([]string)[0] != l[0] {
 		t.Errorf("lru not work")
+	}
+}
+
+func TestMemCache(t *testing.T) {
+	m := NewMemCache()
+	a := func(ctx context.Context) (interface{}, error) {
+		return time.Now(), nil
+	}
+	expire := 3 * time.Second
+	c, _ := m.Execute(context.TODO(), "zou", "a", a, 10, &expire)
+	fmt.Println(c)
+	time.Sleep(time.Second)
+	c2, _ := m.Execute(context.TODO(), "zou", "a", a, 10, &expire)
+	fmt.Println(c2)
+	if c != c2 {
+		t.Errorf("lru not work %v", c)
+	}
+	time.Sleep(3 * time.Second)
+	c3, _ := m.Execute(context.TODO(), "zou", "a", a, 10, &expire)
+	if c == c3 {
+		t.Errorf("lru not work %v", c)
+	}
+
+	type person struct {
+		name string
+		d time.Time
+	}
+
+	b := func(ctx context.Context) (interface{}, error) {
+		return &person{name:"kaka", d:time.Now()}, nil
+	}
+	d, _ := m.Execute(context.TODO(), "stuct", "ab", b, 10, &expire)
+	dv1 := d.(*person).d
+	time.Sleep(time.Second)
+	d1, _ := m.Execute(context.TODO(), "stuct", "ab", b, 10, &expire)
+	dv2 := d1.(*person).d
+	if dv1 == dv2 {
+		t.Errorf("lru not work %v, %v", d, d1)
+	}
+	time.Sleep(3 * time.Second)
+	d2, _ := m.Execute(context.TODO(), "stuct", "ab", b, 10, &expire)
+	dv3 := d2.(*person).d
+	if dv1 != dv3 {
+		t.Errorf("lru not work %v, %v", d, d2)
 	}
 }
