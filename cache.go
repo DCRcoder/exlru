@@ -19,6 +19,12 @@ func NewMemCache() *MemCache {
 }
 
 
+// Execute
+// name lru cache instance name
+// key cache key
+// runFunc run func in real
+// maxEntries max length
+// expire expire time
 func (m *MemCache) Execute(ctx context.Context, name string, key string, runFunc RunFunc, maxEntries int, expire *time.Duration) (interface{}, error) {
 	cache, ok := m.caches[name]
 	if !ok {
