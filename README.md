@@ -22,9 +22,9 @@ callFunc = func(ctx contenx.Context) (interface{}, error){
 
 key := exlru.GenKey(param1, param2, param3)
 name := "cache_name"
-result, err := DefaultMemCache.Execute(hd.R.Context(), name, key, cacheFunc, 100, nil)
+result, err := DefaultMemCache.Execute(context.TODO(), name, key, cacheFunc, 100, nil)
 
 // if need expire
 expire := 3 * time.Second
-result, err := DefaultMemCache.Execute(hd.R.Context(), name, key, cacheFunc, 100, &expire)
+result, err := DefaultMemCache.Execute(context.TODO(), name, key, cacheFunc, 100, &expire)
 ```
