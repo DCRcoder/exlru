@@ -19,7 +19,7 @@ func NewMemCache() *MemCache {
 }
 
 
-// Execute
+// Execute try get result from memcache else run call function and set cache
 // name lru cache instance name
 // key cache key
 // runFunc run func in real
