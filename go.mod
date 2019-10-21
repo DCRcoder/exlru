@@ -1,3 +1,3 @@
-module exlru
+module github.com/DCRcoder/exlru
 
 go 1.13
