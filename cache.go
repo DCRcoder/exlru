@@ -3,21 +3,21 @@ package exlru
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 )
 
 type RunFunc func(ctx context.Context) (interface{}, error)
 
 type MemCache struct {
-	caches map[string]*ExCache
+	caches sync.Map
 }
 
 func NewMemCache() *MemCache {
 	return &MemCache{
-		caches: make(map[string]*ExCache),
+		caches: sync.Map{},
 	}
 }
-
 
 // Execute try get result from memcache else run call function and set cache
 // name lru cache instance name
@@ -26,21 +26,22 @@ func NewMemCache() *MemCache {
 // maxEntries max length
 // expire expire time
 func (m *MemCache) Execute(ctx context.Context, name string, key string, runFunc RunFunc, maxEntries int, expire *time.Duration) (interface{}, error) {
-	cache, ok := m.caches[name]
+	cache, ok := m.caches.Load(name)
 	if !ok {
 		cache = NewExLru(maxEntries)
-		m.caches[name] = cache
+		m.caches.Store(name, cache)
 	}
-	dest, ok := cache.Get(key)
+	c := cache.(*ExCache)
+	dest, ok := c.Get(key)
 	if !ok {
 		dest, err := runFunc(ctx)
 		if err != nil {
 			return nil, err
 		}
 		if expire != nil {
-			cache.AddWithExpire(key, dest, *expire)
+			c.AddWithExpire(key, dest, *expire)
 		} else {
-			cache.Add(key, dest)
+			c.Add(key, dest)
 		}
 		return dest, nil
 	}

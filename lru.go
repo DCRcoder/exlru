@@ -2,41 +2,43 @@ package exlru
 
 import (
 	"container/list"
+	"sync"
 	"time"
 )
 
 // A Key may be any value that is comparable. See http://golang.org/ref/spec#Comparison_operators
-type Key interface {}
+type Key interface{}
 
 type ExCache struct {
-
 	MaxEntries int
 
 	OnEvicted func(key Key, value interface{})
 
-	ll   *list.List
+	ll *list.List
 
 	cache map[interface{}]*list.Element
 
+	mut sync.Mutex
 }
 
 type entry struct {
-	key Key
-	value interface{}
+	key    Key
+	value  interface{}
 	expire int64
 }
 
-
 func NewExLru(maxEntries int) *ExCache {
 	return &ExCache{
-		MaxEntries:maxEntries,
-		ll: list.New(),
-		cache: make(map[interface{}]*list.Element),
+		MaxEntries: maxEntries,
+		ll:         list.New(),
+		cache:      make(map[interface{}]*list.Element),
 	}
 }
 
 // Add adds a value to the cache.
 func (c *ExCache) Add(key Key, value interface{}) {
+	c.mut.Lock()
+	defer c.mut.Unlock()
 	if c.cache == nil {
 		c.cache = make(map[interface{}]*list.Element)
 		c.ll = list.New()
@@ -56,6 +58,8 @@ func (c *ExCache) Add(key Key, value interface{}) {
 
 // Add adds a value to the cache and set expire time.
 func (c *ExCache) AddWithExpire(key Key, value interface{}, expire time.Duration) {
+	c.mut.Lock()
+	defer c.mut.Unlock()
 	if c.cache == nil {
 		c.cache = make(map[interface{}]*list.Element)
 		c.ll = list.New()
@@ -86,7 +90,7 @@ func (c *ExCache) Get(key Key) (value interface{}, ok bool) {
 			c.ll.MoveToFront(ele)
 			return ele.Value.(*entry).value, true
 		}
-		if deadline >= int64(time.Now().UnixNano())  {
+		if deadline >= int64(time.Now().UnixNano()) {
 			c.ll.MoveToFront(ele)
 			return ele.Value.(*entry).value, true
 		} else if deadline < int64(time.Now().UnixNano()) {
