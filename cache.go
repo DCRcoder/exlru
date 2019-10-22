@@ -10,7 +10,10 @@ import (
 type RunFunc func(ctx context.Context) (interface{}, error)
 
 type MemCache struct {
+
 	caches sync.Map
+
+	mux sync.Mutex
 }
 
 func NewMemCache() *MemCache {
@@ -26,11 +29,13 @@ func NewMemCache() *MemCache {
 // maxEntries max length
 // expire expire time
 func (m *MemCache) Execute(ctx context.Context, name string, key string, runFunc RunFunc, maxEntries int, expire *time.Duration) (interface{}, error) {
+	m.mux.Lock()
 	cache, ok := m.caches.Load(name)
 	if !ok {
 		cache = NewExLru(maxEntries)
 		m.caches.Store(name, cache)
 	}
+	m.mux.Unlock()
 	c := cache.(*ExCache)
 	dest, ok := c.Get(key)
 	if !ok {

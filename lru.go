@@ -18,7 +18,7 @@ type ExCache struct {
 
 	cache map[interface{}]*list.Element
 
-	mut sync.Mutex
+	mux sync.Mutex
 }
 
 type entry struct {
@@ -37,8 +37,8 @@ func NewExLru(maxEntries int) *ExCache {
 
 // Add adds a value to the cache.
 func (c *ExCache) Add(key Key, value interface{}) {
-	c.mut.Lock()
-	defer c.mut.Unlock()
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	if c.cache == nil {
 		c.cache = make(map[interface{}]*list.Element)
 		c.ll = list.New()
@@ -58,8 +58,8 @@ func (c *ExCache) Add(key Key, value interface{}) {
 
 // Add adds a value to the cache and set expire time.
 func (c *ExCache) AddWithExpire(key Key, value interface{}, expire time.Duration) {
-	c.mut.Lock()
-	defer c.mut.Unlock()
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	if c.cache == nil {
 		c.cache = make(map[interface{}]*list.Element)
 		c.ll = list.New()
@@ -80,6 +80,8 @@ func (c *ExCache) AddWithExpire(key Key, value interface{}, expire time.Duration
 
 // Get looks up a key's value from the cache.
 func (c *ExCache) Get(key Key) (value interface{}, ok bool) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	if c.cache == nil {
 		return
 	}

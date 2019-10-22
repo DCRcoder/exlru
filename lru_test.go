@@ -147,3 +147,14 @@ func TestMultiMemCache(t *testing.T) {
 	}()
 	time.Sleep(2 * time.Second)
 }
+
+func BenchmarkMemCache_Execute(b *testing.B) {
+	m := NewMemCache()
+	a := func(ctx context.Context) (interface{}, error) {return "hello", nil}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		go func() {
+			_, _ = m.Execute(context.TODO(), string(i), "bb", a, 100, nil)
+		}()
+	}
+}
