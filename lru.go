@@ -47,6 +47,7 @@ func (c *ExCache) Add(key Key, value interface{}) {
 	if ee, ok := c.cache[key]; ok && ee.Value.(*entry).expire > int64(time.Now().UnixNano()) {
 		c.ll.MoveToFront(ee)
 		ee.Value.(*entry).value = value
+		return
 	}
 
 	ele := c.ll.PushFront(&entry{key, value, 0})
@@ -69,6 +70,7 @@ func (c *ExCache) AddWithExpire(key Key, value interface{}, expire time.Duration
 		c.ll.MoveToFront(ee)
 		ee.Value.(*entry).value = value
 		ee.Value.(*entry).expire = int64(time.Now().UnixNano()) + expire.Nanoseconds()
+		return
 	}
 
 	ele := c.ll.PushFront(&entry{key, value, int64(time.Now().UnixNano()) + expire.Nanoseconds()})
