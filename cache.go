@@ -10,13 +10,14 @@ import (
 type RunFunc func(ctx context.Context) (interface{}, error)
 
 type MemCache struct {
-	caches sync.Map
-	mux    sync.Mutex
+	caches *sync.Map
+	mux    *sync.Mutex
 }
 
 func NewMemCache() *MemCache {
 	return &MemCache{
-		caches: sync.Map{},
+		caches: &sync.Map{},
+		mux:    &sync.Mutex{},
 	}
 }
 
