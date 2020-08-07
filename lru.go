@@ -27,6 +27,7 @@ type entry struct {
 	expire int64
 }
 
+// NewExLru return new instance
 func NewExLru(maxEntries int) *ExCache {
 	return &ExCache{
 		MaxEntries: maxEntries,
@@ -57,7 +58,7 @@ func (c *ExCache) Add(key Key, value interface{}) {
 	}
 }
 
-// Add adds a value to the cache and set expire time.
+// AddWithExpire adds a value to the cache and set expire time.
 func (c *ExCache) AddWithExpire(key Key, value interface{}, expire time.Duration) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
